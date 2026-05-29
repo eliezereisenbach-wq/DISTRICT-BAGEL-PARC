@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>District Bagel Park — Financial Management</title>
+<style>
+  :root{
+    --bg:#fbf6ec; --panel:#ffffff; --panel2:#fbf6ec; --line:#eaddc9;
+    --line:#e8dcc4; --text:#1c1c1c; --muted:#8a7f6c;
+    --red:#c01f1f; --red-dark:#9e1414;
+    --green:#157f3b; --green-bg:#e3f3e8;
+    --yellow:#b06f00; --yellow-bg:#fbedcf;
+    --redbad:#c01f1f; --redbad-bg:#fbe0df;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .display{font-family:"Oswald","Arial Narrow",Impact,"Segoe UI",sans-serif;text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+  header{background:var(--panel);padding:24px 28px 18px;border-bottom:5px solid var(--red)}
+  header .brand{display:flex;align-items:center;gap:12px}
+  header h1{margin:0;font-size:34px;color:var(--red);line-height:1}
+  header .egg{font-size:30px}
+  header p{margin:8px 0 0;color:var(--muted);font-size:14px;font-weight:600}
+  nav{display:flex;gap:8px;background:var(--panel);padding:12px 22px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  nav button{background:transparent;border:1px solid transparent;color:var(--text);padding:9px 18px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  nav button:hover{background:#f4ecdd}
+  nav button.active{background:var(--red);color:#fff}
+  main{padding:26px 22px;max-width:1120px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:22px;box-shadow:0 2px 10px #00000008}
+  .card h2{margin:0 0 18px;font-size:22px;color:var(--red);position:relative;padding-bottom:10px;font-family:"Oswald","Arial Narrow",Impact,"Segoe UI",sans-serif;text-transform:uppercase;letter-spacing:.6px;font-weight:800}
+  .card h2::after{content:"";position:absolute;left:0;bottom:0;width:64px;height:4px;background:var(--red);border-radius:3px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .kpi .label{color:var(--red);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:28px;font-weight:800;margin-top:6px;color:var(--text)}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px;font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--red);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  tr:hover td{background:#00000005}
+  .badge{display:inline-block;padding:4px 13px;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:.4px}
+  .b-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+  .b-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow)}
+  .b-red{background:var(--redbad-bg);color:var(--redbad);border:1px solid var(--redbad)}
+  .tag{display:inline-block;padding:3px 11px;border-radius:6px;background:#f4ecdd;border:1px solid var(--line);font-size:12px;font-weight:600;color:var(--text)}
+  .form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  input,select{background:#fff;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font-size:15px;width:160px}
+  input:focus,select:focus{outline:2px solid var(--red);border-color:transparent}
+  .btn{background:var(--red);color:#fff;border:0;padding:11px 22px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px;text-transform:uppercase;letter-spacing:.4px}
+  .btn:hover{background:var(--red-dark)}
+  .btn.secondary{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+  .btn.secondary:hover{background:#fbe0df}
+  .btn.danger{background:transparent;color:var(--red);border:1.5px solid var(--red);padding:6px 13px;font-size:12px}
+  .btn.danger:hover{background:#fbe0df}
+  .row-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .hint{color:var(--muted);font-size:13px;line-height:1.8;font-weight:500}
+  .pct-cell{font-weight:700}
+  .over{color:var(--red)}
+  .empty{color:var(--muted);text-align:center;padding:30px;font-weight:600}
+  footer{height:18px;background:var(--red)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="egg">🍳</span><h1>District Bagel Park</h1></div>
+  <p>Financial Management — keeping food &amp; labor cost in line with sales</p>
+</header>
+<nav>
+  <button data-tab="dashboard" class="active">Dashboard</button>
+  <button data-tab="entries">Daily Entries</button>
+  <button data-tab="invoices">Invoices</button>
+  <button data-tab="settings">Settings</button>
+</nav>
+<main>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard">
+    <div class="card">
+      <h2>Overall Summary</h2>
+      <div class="grid" id="kpis"></div>
+    </div>
+    <div class="card">
+      <h2>Monthly Breakdown</h2>
+      <table>
+        <thead><tr><th>Month</th><th>Sales</th><th>Food Cost</th><th>Labor Cost</th><th>Food %</th><th>Labor %</th><th>Prime %</th><th>Status</th></tr></thead>
+        <tbody id="monthlyBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Invoices by Category</h2>
+      <table>
+        <thead><tr><th>Category</th><th>Invoices</th><th>Total</th></tr></thead>
+        <tbody id="catBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ENTRIES -->
+  <section id="entries" style="display:none">
+    <div class="card">
+      <h2>Add Daily Entry</h2>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="inDate"></div>
+        <div class="field"><label>Sales</label><input type="number" id="inSales" min="0" step="0.01" placeholder="0"></div>
+        <div class="field"><label>Food Cost</label><input type="number" id="inFood" min="0" step="0.01" placeholder="0"></div>
+        <div class="field"><label>Labor Cost</label><input type="number" id="inLabor" min="0" step="0.01" placeholder="0"></div>
+        <button class="btn" id="addBtn">Add Entry</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Entries</h2>
+      <table>
+        <thead><tr><th>Date</th><th>Sales</th><th>Food Cost</th><th>Labor Cost</th><th>Food %</th><th>Labor %</th><th>Prime %</th><th>Status</th><th></th></tr></thead>
+        <tbody id="entriesBody"></tbody>
+      </table>
+      <div class="row-actions">
+        <button class="btn secondary" id="exportBtn">Export CSV</button>
+        <button class="btn secondary" id="backupBtn">Backup (JSON)</button>
+        <button class="btn secondary" id="restoreBtn">Restore (JSON)</button>
+        <input type="file" id="restoreFile" accept=".json" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- INVOICES -->
+  <section id="invoices" style="display:none">
+    <div class="card">
+      <h2>Add Invoice</h2>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="invDate"></div>
+        <div class="field"><label>Company</label><input type="text" id="invCompany" placeholder="Supplier name" style="width:200px"></div>
+        <div class="field"><label>Category</label>
+          <input type="text" id="invCategory" list="catList" placeholder="e.g. Food" style="width:180px">
+          <datalist id="catList">
+            <option value="Food"><option value="Beverages"><option value="Meat"><option value="Dairy">
+            <option value="Vegetables"><option value="Packaging"><option value="Cleaning">
+            <option value="Rent"><option value="Utilities"><option value="Equipment"><option value="Other">
+          </datalist>
+        </div>
+        <div class="field"><label>Amount</label><input type="number" id="invAmount" min="0" step="0.01" placeholder="0"></div>
+        <button class="btn" id="addInvBtn">Add Invoice</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Invoices</h2>
+      <table>
+        <thead><tr><th>Date</th><th>Company</th><th>Category</th><th>Amount</th><th></th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+      <div class="row-actions">
+        <button class="btn secondary" id="exportInvBtn">Export CSV</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" style="display:none">
+    <div class="card">
+      <h2>Targets &amp; Red Lines</h2>
+      <div class="form-row">
+        <div class="field"><label>Food Cost target (%)</label><input type="number" id="setFood" min="0" max="100" step="0.1"></div>
+        <div class="field"><label>Labor Cost target (%)</label><input type="number" id="setLabor" min="0" max="100" step="0.1"></div>
+        <div class="field"><label>Prime red line (%)</label><input type="number" id="setRed" min="0" max="100" step="0.1"></div>
+        <div class="field"><label>Currency symbol</label><input type="text" id="setCur" maxlength="3" style="width:90px"></div>
+        <button class="btn" id="saveSettings">Save</button>
+      </div>
+      <p class="hint">
+        Prime % = (Food Cost + Labor Cost) / Sales.<br>
+        <span style="color:#157f3b;font-weight:800">GREEN</span> = at or below your combined target (Food + Labor).
+        <span style="color:#b06f00;font-weight:800">YELLOW</span> = between target and red line.
+        <span style="color:#c01f1f;font-weight:800">RED</span> = above the red line — profit at risk.
+      </p>
+    </div>
+  </section>
+
+</main>
+<footer></footer>
+
+<script>
+const KEY_DATA="dbp_entries", KEY_SET="dbp_settings", KEY_INV="dbp_invoices";
+const defaults={food:32,labor:30,red:62,cur:"₪"};
+
+function loadJSON(k,f){ try{return JSON.parse(localStorage.getItem(k))??f;}catch(e){return f;} }
+let settings=Object.assign({},defaults,loadJSON(KEY_SET,{}));
+let entries=loadJSON(KEY_DATA,[]);
+let invoices=loadJSON(KEY_INV,[]);
+
+function saveEntries(){ localStorage.setItem(KEY_DATA,JSON.stringify(entries)); }
+function saveInvoices(){ localStorage.setItem(KEY_INV,JSON.stringify(invoices)); }
+function saveSettingsObj(){ localStorage.setItem(KEY_SET,JSON.stringify(settings)); }
+
+function money(n){ return settings.cur+" "+Math.round(n).toLocaleString(); }
+function pct(n){ return (n*100).toFixed(1)+"%"; }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+function statusOf(prime){
+  const target=(settings.food+settings.labor)/100, red=settings.red/100;
+  if(prime<=target) return "GREEN";
+  if(prime<=red) return "YELLOW";
+  return "RED";
+}
+function badge(st){ return '<span class="badge '+({GREEN:"b-green",YELLOW:"b-yellow",RED:"b-red"}[st])+'">'+st+'</span>'; }
+function calc(e){
+  const s=+e.sales||0,f=+e.food||0,l=+e.labor||0;
+  return {foodP:s?f/s:0,laborP:s?l/s:0,primeP:s?(f+l)/s:0,status:statusOf(s?(f+l)/s:0)};
+}
+function pcell(val,over){ return '<td class="pct-cell'+(over?" over":"")+'">'+pct(val)+'</td>'; }
+
+function renderEntries(){
+  const tb=document.getElementById("entriesBody");
+  if(!entries.length){ tb.innerHTML='<tr><td colspan="9" class="empty">No entries yet. Add your first day above.</td></tr>'; return; }
+  tb.innerHTML=[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{
+    const c=calc(e);
+    return '<tr><td>'+e.date+'</td><td>'+money(e.sales)+'</td><td>'+money(e.food)+'</td><td>'+money(e.labor)+'</td>'+
+      pcell(c.foodP,c.foodP>settings.food/100)+pcell(c.laborP,c.laborP>settings.labor/100)+pcell(c.primeP,c.primeP>settings.red/100)+
+      '<td>'+badge(c.status)+'</td><td><button class="btn danger" data-id="'+e.id+'">Delete</button></td></tr>';
+  }).join("");
+  tb.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{ entries=entries.filter(x=>x.id!=b.dataset.id); saveEntries(); renderAll(); });
+}
+
+function renderInvoices(){
+  const tb=document.getElementById("invBody");
+  if(!invoices.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No invoices yet. Add one above.</td></tr>'; }
+  else tb.innerHTML=[...invoices].sort((a,b)=>b.date.localeCompare(a.date)).map(v=>
+    '<tr><td>'+v.date+'</td><td>'+esc(v.company)+'</td><td><span class="tag">'+esc(v.category)+'</span></td><td>'+money(v.amount)+'</td>'+
+    '<td><button class="btn danger" data-iid="'+v.id+'">Delete</button></td></tr>').join("");
+  tb.querySelectorAll("button[data-iid]").forEach(b=>b.onclick=()=>{ invoices=invoices.filter(x=>x.id!=b.dataset.iid); saveInvoices(); renderAll(); });
+}
+
+function renderDashboard(){
+  const tS=entries.reduce((a,e)=>a+(+e.sales||0),0),tF=entries.reduce((a,e)=>a+(+e.food||0),0),tL=entries.reduce((a,e)=>a+(+e.labor||0),0);
+  const fp=tS?tF/tS:0,lp=tS?tL/tS:0,pp=tS?(tF+tL)/tS:0;
+  document.getElementById("kpis").innerHTML=
+    kpi("Total Sales",money(tS),entries.length+" day(s) logged")+
+    kpi("Food Cost %",pct(fp),"target "+settings.food+"%")+
+    kpi("Labor Cost %",pct(lp),"target "+settings.labor+"%")+
+    kpi("Prime Cost %",pct(pp),"red line "+settings.red+"%")+
+    '<div class="kpi"><div class="label">Status</div><div class="val">'+badge(statusOf(pp))+'</div><div class="sub">Food + Labor vs Sales</div></div>';
+
+  const months={};
+  entries.forEach(e=>{ const k=(e.date||"").slice(0,7); if(!k)return; (months[k]=months[k]||{s:0,f:0,l:0}); months[k].s+=+e.sales||0; months[k].f+=+e.food||0; months[k].l+=+e.labor||0; });
+  const mk=Object.keys(months).sort((a,b)=>b.localeCompare(a)), mb=document.getElementById("monthlyBody");
+  mb.innerHTML=mk.length?mk.map(k=>{ const m=months[k],f=m.s?m.f/m.s:0,l=m.s?m.l/m.s:0,p=m.s?(m.f+m.l)/m.s:0;
+    return '<tr><td>'+k+'</td><td>'+money(m.s)+'</td><td>'+money(m.f)+'</td><td>'+money(m.l)+'</td>'+pcell(f)+pcell(l)+pcell(p)+'<td>'+badge(statusOf(p))+'</td></tr>';
+  }).join(""):'<tr><td colspan="8" class="empty">No data yet.</td></tr>';
+
+  const cats={};
+  invoices.forEach(v=>{ const c=v.category||"Other"; (cats[c]=cats[c]||{n:0,sum:0}); cats[c].n++; cats[c].sum+=+v.amount||0; });
+  const ck=Object.keys(cats).sort((a,b)=>cats[b].sum-cats[a].sum), cb=document.getElementById("catBody");
+  if(!ck.length){ cb.innerHTML='<tr><td colspan="3" class="empty">No invoices yet.</td></tr>'; }
+  else{ const tot=invoices.reduce((a,v)=>a+(+v.amount||0),0);
+    cb.innerHTML=ck.map(c=>'<tr><td><span class="tag">'+esc(c)+'</span></td><td>'+cats[c].n+'</td><td>'+money(cats[c].sum)+'</td></tr>').join("")+
+      '<tr><td style="font-weight:800">Total</td><td></td><td style="font-weight:800">'+money(tot)+'</td></tr>';
+  }
+}
+
+function kpi(label,val,sub){ return '<div class="kpi"><div class="label">'+label+'</div><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>'; }
+function renderSettings(){ setFood.value=settings.food; setLabor.value=settings.labor; setRed.value=settings.red; setCur.value=settings.cur; }
+function renderAll(){ renderDashboard(); renderEntries(); renderInvoices(); }
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+  ["dashboard","entries","invoices","settings"].forEach(t=>document.getElementById(t).style.display=(t===b.dataset.tab?"block":"none"));
+});
+
+document.getElementById("addBtn").onclick=()=>{
+  const date=inDate.value,sales=+inSales.value,food=+inFood.value,labor=+inLabor.value;
+  if(!date){ alert("Please pick a date."); return; }
+  if(!(sales>0)){ alert("Sales must be greater than 0."); return; }
+  entries.push({id:uid(),date,sales,food:food||0,labor:labor||0}); saveEntries();
+  inSales.value="";inFood.value="";inLabor.value=""; renderAll();
+};
+document.getElementById("addInvBtn").onclick=()=>{
+  const date=invDate.value,company=invCompany.value.trim(),category=invCategory.value.trim()||"Other",amount=+invAmount.value;
+  if(!date){ alert("Please pick a date."); return; }
+  if(!company){ alert("Please enter a company name."); return; }
+  if(!(amount>0)){ alert("Amount must be greater than 0."); return; }
+  invoices.push({id:uid(),date,company,category,amount}); saveInvoices();
+  invCompany.value="";invCategory.value="";invAmount.value=""; renderAll();
+};
+document.getElementById("saveSettings").onclick=()=>{
+  settings={food:+setFood.value||0,labor:+setLabor.value||0,red:+setRed.value||0,cur:(setCur.value||"₪").trim()};
+  saveSettingsObj(); renderAll(); alert("Settings saved.");
+};
+
+function csv(rows){ return rows.map(r=>r.map(x=>/[",\n]/.test(String(x))?'"'+String(x).replace(/"/g,'""')+'"':x).join(",")).join("\n"); }
+document.getElementById("exportBtn").onclick=()=>{
+  const rows=[["Date","Sales","Food Cost","Labor Cost","Food %","Labor %","Prime %","Status"]];
+  [...entries].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const c=calc(e);rows.push([e.date,e.sales,e.food,e.labor,(c.foodP*100).toFixed(1),(c.laborP*100).toFixed(1),(c.primeP*100).toFixed(1),c.status]);});
+  download("district_bagel_park_entries.csv","text/csv",csv(rows));
+};
+document.getElementById("exportInvBtn").onclick=()=>{
+  const rows=[["Date","Company","Category","Amount"]];
+  [...invoices].sort((a,b)=>a.date.localeCompare(b.date)).forEach(v=>rows.push([v.date,v.company,v.category,v.amount]));
+  download("district_bagel_park_invoices.csv","text/csv",csv(rows));
+};
+document.getElementById("backupBtn").onclick=()=>download("district_bagel_park_backup.json","application/json",JSON.stringify({settings,entries,invoices},null,2));
+document.getElementById("restoreBtn").onclick=()=>restoreFile.click();
+document.getElementById("restoreFile").onchange=ev=>{
+  const f=ev.target.files[0]; if(!f)return; const r=new FileReader();
+  r.onload=()=>{ try{const d=JSON.parse(r.result); if(d.entries)entries=d.entries; if(d.invoices)invoices=d.invoices; if(d.settings)settings=Object.assign({},defaults,d.settings);
+    saveEntries();saveInvoices();saveSettingsObj(); renderSettings(); renderAll(); alert("Restored."); }catch(e){ alert("Invalid file."); } };
+  r.readAsText(f);
+};
+function download(name,type,content){ const b=new Blob([content],{type}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
+function uid(){ return Date.now()+""+Math.floor(Math.random()*1000); }
+
+const today=new Date().toISOString().slice(0,10);
+inDate.value=today; invDate.value=today;
+renderSettings(); renderAll();
+</script>
+</body>
+</html>
