@@ -60,6 +60,16 @@
   .over{color:var(--red)}
   .empty{color:var(--muted);text-align:center;padding:30px;font-weight:600}
   footer{height:18px;background:var(--red)}
+  img.thumb{width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:pointer;display:block}
+  img.thumb:hover{outline:2px solid var(--red)}
+  #photoModal{display:none;position:fixed;inset:0;background:#000000cc;z-index:50;align-items:center;justify-content:center;padding:20px}
+  #photoModal img{max-width:95%;max-height:90%;border-radius:10px;box-shadow:0 0 30px #0009}
+  #chartWrap{width:100%;overflow-x:auto}
+  #chartWrap svg{display:block;width:100%;height:auto}
+  .chart-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12px;font-weight:700;color:var(--muted)}
+  .chart-legend span{display:flex;align-items:center;gap:6px}
+  .chart-legend i{width:14px;height:4px;border-radius:2px;display:inline-block}
+  .chart-legend i.dash{background:repeating-linear-gradient(90deg,var(--red) 0 4px,transparent 4px 8px);height:0;border-top:2px dashed var(--red)}
 </style>
 </head>
 <body>
@@ -80,6 +90,21 @@
     <div class="card">
       <h2>Overall Summary</h2>
       <div class="grid" id="kpis"></div>
+    </div>
+    <div class="card">
+      <h2>Cost Trend</h2>
+      <div id="chartWrap"></div>
+      <div class="chart-legend">
+        <span><i style="background:var(--red)"></i>Prime %</span>
+        <span><i style="background:#1f6fc0"></i>Food %</span>
+        <span><i style="background:#b06f00"></i>Labor %</span>
+        <span><i class="dash"></i>Red line</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Food Cost — Invoices vs Entered</h2>
+      <div class="grid" id="foodLink"></div>
+      <p class="hint">Food-category invoices (Food, Meat, Dairy, Vegetables, Beverages, Packaging) totalled automatically. Compare with the Food Cost you typed into Daily Entries — they should be close.</p>
     </div>
     <div class="card">
       <h2>Monthly Breakdown</h2>
@@ -140,13 +165,14 @@
           </datalist>
         </div>
         <div class="field"><label>Amount</label><input type="number" id="invAmount" min="0" step="0.01" placeholder="0"></div>
+        <div class="field"><label>Photo (camera)</label><input type="file" id="invPhoto" accept="image/*" capture="environment" style="width:220px;padding:8px"></div>
         <button class="btn" id="addInvBtn">Add Invoice</button>
       </div>
     </div>
     <div class="card">
       <h2>Invoices</h2>
       <table>
-        <thead><tr><th>Date</th><th>Company</th><th>Category</th><th>Amount</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Company</th><th>Category</th><th>Amount</th><th>Photo</th><th></th></tr></thead>
         <tbody id="invBody"></tbody>
       </table>
       <div class="row-actions">
@@ -177,10 +203,13 @@
 
 </main>
 <footer></footer>
+<div id="photoModal"><img id="photoModalImg" alt="invoice"></div>
 
 <script>
 const KEY_DATA="dbp_entries", KEY_SET="dbp_settings", KEY_INV="dbp_invoices";
-const defaults={food:32,labor:30,red:62,cur:"₪"};
+const defaults={food:32,labor:30,red:62,cur:"$"};
+const FOOD_CATS=["Food","Meat","Dairy","Vegetables","Beverages","Packaging"];
+function isFoodCat(c){ return FOOD_CATS.some(x=>x.toLowerCase()===String(c||"").toLowerCase()); }
 
 function loadJSON(k,f){ try{return JSON.parse(localStorage.getItem(k))??f;}catch(e){return f;} }
 let settings=Object.assign({},defaults,loadJSON(KEY_SET,{}));
@@ -191,7 +220,7 @@ function saveEntries(){ localStorage.setItem(KEY_DATA,JSON.stringify(entries)); 
 function saveInvoices(){ localStorage.setItem(KEY_INV,JSON.stringify(invoices)); }
 function saveSettingsObj(){ localStorage.setItem(KEY_SET,JSON.stringify(settings)); }
 
-function money(n){ return settings.cur+" "+Math.round(n).toLocaleString(); }
+function money(n){ const s=Math.round(n).toLocaleString(); return /^[A-Za-z]/.test(settings.cur)?settings.cur+" "+s:settings.cur+s; }
 function pct(n){ return (n*100).toFixed(1)+"%"; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
@@ -222,11 +251,13 @@ function renderEntries(){
 
 function renderInvoices(){
   const tb=document.getElementById("invBody");
-  if(!invoices.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No invoices yet. Add one above.</td></tr>'; }
+  if(!invoices.length){ tb.innerHTML='<tr><td colspan="6" class="empty">No invoices yet. Add one above.</td></tr>'; }
   else tb.innerHTML=[...invoices].sort((a,b)=>b.date.localeCompare(a.date)).map(v=>
     '<tr><td>'+v.date+'</td><td>'+esc(v.company)+'</td><td><span class="tag">'+esc(v.category)+'</span></td><td>'+money(v.amount)+'</td>'+
+    '<td>'+(v.photo?'<img class="thumb" src="'+v.photo+'" data-photo="'+v.id+'">':'<span style="color:var(--muted)">—</span>')+'</td>'+
     '<td><button class="btn danger" data-iid="'+v.id+'">Delete</button></td></tr>').join("");
   tb.querySelectorAll("button[data-iid]").forEach(b=>b.onclick=()=>{ invoices=invoices.filter(x=>x.id!=b.dataset.iid); saveInvoices(); renderAll(); });
+  tb.querySelectorAll("img.thumb").forEach(im=>im.onclick=()=>{ const v=invoices.find(x=>x.id==im.dataset.photo); if(v&&v.photo)openPhoto(v.photo); });
 }
 
 function renderDashboard(){
@@ -254,6 +285,51 @@ function renderDashboard(){
     cb.innerHTML=ck.map(c=>'<tr><td><span class="tag">'+esc(c)+'</span></td><td>'+cats[c].n+'</td><td>'+money(cats[c].sum)+'</td></tr>').join("")+
       '<tr><td style="font-weight:800">Total</td><td></td><td style="font-weight:800">'+money(tot)+'</td></tr>';
   }
+  renderChart(); renderFoodLink(tS,tF);
+}
+
+function renderFoodLink(totalSales,enteredFood){
+  const invFood=invoices.filter(v=>isFoodCat(v.category)).reduce((a,v)=>a+(+v.amount||0),0);
+  const invFoodP=totalSales?invFood/totalSales:0;
+  const enteredFoodP=totalSales?enteredFood/totalSales:0;
+  const diff=invFood-enteredFood;
+  const diffTxt=(diff<0?"−":"+")+money(Math.abs(diff));
+  document.getElementById("foodLink").innerHTML=
+    kpi("Food Invoices Total",money(invFood),"food-category invoices")+
+    kpi("Food % (from invoices)",pct(invFoodP),"target "+settings.food+"%")+
+    kpi("Food % (entered)",pct(enteredFoodP),"from Daily Entries")+
+    kpi("Invoices − Entered",diffTxt,Math.abs(diff)<1?"matched":"check for gaps");
+}
+
+function renderChart(){
+  const wrap=document.getElementById("chartWrap"); if(!wrap)return;
+  const months={};
+  entries.forEach(e=>{ const k=(e.date||"").slice(0,7); if(!k)return; (months[k]=months[k]||{s:0,f:0,l:0}); months[k].s+=+e.sales||0; months[k].f+=+e.food||0; months[k].l+=+e.labor||0; });
+  const keys=Object.keys(months).sort();
+  if(keys.length<1){ wrap.innerHTML='<div class="empty">No data yet — add daily entries to see the trend.</div>'; return; }
+  const pts=keys.map(k=>{ const m=months[k]; return {k,food:m.s?m.f/m.s*100:0,labor:m.s?m.l/m.s*100:0,prime:m.s?(m.f+m.l)/m.s*100:0}; });
+  const W=720,H=300,padL=44,padR=16,padT=16,padB=46;
+  const red=settings.red;
+  const maxV=Math.max(red+8,...pts.map(p=>p.prime))*1.05;
+  const minV=0;
+  const x=i=>padL+(pts.length<=1?(W-padL-padR)/2:i*(W-padL-padR)/(pts.length-1));
+  const y=v=>padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV));
+  const line=(arr,color)=>{ const d=arr.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
+    return '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round"/>'+
+      arr.map((v,i)=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="3.2" fill="'+color+'"/>').join(""); };
+  let grid="";
+  const step=maxV<=40?10:maxV<=80?20:25;
+  for(let g=0;g<=maxV;g+=step){ const yy=y(g).toFixed(1); grid+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#e8dcc4" stroke-width="1"/>'+
+    '<text x="'+(padL-8)+'" y="'+(+yy+4)+'" text-anchor="end" font-size="11" fill="#8a7f6c">'+g+'%</text>'; }
+  const redY=y(red).toFixed(1);
+  const redLine='<line x1="'+padL+'" y1="'+redY+'" x2="'+(W-padR)+'" y2="'+redY+'" stroke="#c01f1f" stroke-width="1.6" stroke-dasharray="6 5"/>';
+  const labels=pts.map((p,i)=>'<text x="'+x(i).toFixed(1)+'" y="'+(H-padB+20)+'" text-anchor="middle" font-size="11" fill="#8a7f6c">'+p.k+'</text>').join("");
+  wrap.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img">'+
+    grid+redLine+
+    line(pts.map(p=>p.food),"#1f6fc0")+
+    line(pts.map(p=>p.labor),"#b06f00")+
+    line(pts.map(p=>p.prime),"#c01f1f")+
+    labels+'</svg>';
 }
 
 function kpi(label,val,sub){ return '<div class="kpi"><div class="label">'+label+'</div><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>'; }
@@ -272,16 +348,35 @@ document.getElementById("addBtn").onclick=()=>{
   entries.push({id:uid(),date,sales,food:food||0,labor:labor||0}); saveEntries();
   inSales.value="";inFood.value="";inLabor.value=""; renderAll();
 };
-document.getElementById("addInvBtn").onclick=()=>{
+function resizeImage(file,max,quality){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const img=new Image();
+      img.onload=()=>{ let w=img.width,h=img.height; const sc=Math.min(1,max/Math.max(w,h)); w=Math.round(w*sc); h=Math.round(h*sc);
+        const c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(img,0,0,w,h);
+        res(c.toDataURL("image/jpeg",quality)); };
+      img.onerror=rej; img.src=fr.result; };
+    fr.onerror=rej; fr.readAsDataURL(file);
+  });
+}
+const photoModal=document.getElementById("photoModal"), photoModalImg=document.getElementById("photoModalImg");
+photoModal.onclick=()=>photoModal.style.display="none";
+function openPhoto(src){ photoModalImg.src=src; photoModal.style.display="flex"; }
+
+document.getElementById("addInvBtn").onclick=async()=>{
   const date=invDate.value,company=invCompany.value.trim(),category=invCategory.value.trim()||"Other",amount=+invAmount.value;
   if(!date){ alert("Please pick a date."); return; }
   if(!company){ alert("Please enter a company name."); return; }
   if(!(amount>0)){ alert("Amount must be greater than 0."); return; }
-  invoices.push({id:uid(),date,company,category,amount}); saveInvoices();
-  invCompany.value="";invCategory.value="";invAmount.value=""; renderAll();
+  let photo=null; const pf=invPhoto.files[0];
+  if(pf){ try{ photo=await resizeImage(pf,1100,0.6); }catch(e){ alert("Could not read the photo."); return; } }
+  const inv={id:uid(),date,company,category,amount}; if(photo)inv.photo=photo;
+  invoices.push(inv);
+  try{ saveInvoices(); }catch(e){ invoices.pop(); alert("Storage is full — delete some old invoices/photos, or use Backup."); return; }
+  invCompany.value="";invCategory.value="";invAmount.value="";invPhoto.value=""; renderAll();
 };
 document.getElementById("saveSettings").onclick=()=>{
-  settings={food:+setFood.value||0,labor:+setLabor.value||0,red:+setRed.value||0,cur:(setCur.value||"₪").trim()};
+  settings={food:+setFood.value||0,labor:+setLabor.value||0,red:+setRed.value||0,cur:(setCur.value||"$").trim()};
   saveSettingsObj(); renderAll(); alert("Settings saved.");
 };
 
