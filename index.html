@@ -73,18 +73,29 @@
   .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:999px;background:#f4ecdd;border:1px solid var(--line);font-size:13px;font-weight:600}
   .chip button{border:0;background:var(--red);color:#fff;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;padding:0}
   .chip button:hover{background:var(--red-dark)}
+  header{position:relative}
+  .acct{position:absolute;top:20px;right:24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .acct-email{font-size:13px;color:var(--muted);font-weight:700;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sync-dot{font-size:12px;color:var(--muted);font-weight:700}
+  #authGate{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  #authGate .auth-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px 30px;max-width:380px;width:100%;text-align:center;box-shadow:0 6px 34px #0001}
+  #authGate .auth-box h2{color:var(--red);margin:6px 0 4px;font-family:"Oswald","Arial Narrow",Impact,"Segoe UI",sans-serif;text-transform:uppercase;letter-spacing:.6px}
+  #authGate .auth-box .btn{display:block;width:100%;margin:10px 0 0}
+  #authGate .gicon{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-right:8px}
 </style>
 </head>
 <body>
 <header>
   <div class="brand"><span class="egg">🍳</span><h1>District Bagel Park</h1></div>
   <p>Financial Management — keeping food &amp; labor cost in line with sales</p>
+  <div class="acct" id="acct"></div>
 </header>
 <nav>
   <button data-tab="dashboard" class="active">Dashboard</button>
   <button data-tab="entries">Daily Entries</button>
   <button data-tab="invoices">Invoices</button>
   <button data-tab="fixed">Fixed Costs</button>
+  <button data-tab="ai">AI Advisor</button>
   <button data-tab="settings">Settings</button>
 </nav>
 <main>
@@ -248,6 +259,40 @@
     </div>
   </section>
 
+  <!-- AI ADVISOR -->
+  <section id="ai" style="display:none">
+    <div class="card">
+      <h2>Smart Analysis</h2>
+      <p class="hint">Automatic review of your sales, costs, invoices and suppliers — runs on your device, no internet or key needed.</p>
+      <div class="row-actions" style="margin:10px 0 16px">
+        <button class="btn" id="analyzeBtn">Re-analyze now</button>
+      </div>
+      <div id="aiInsights"></div>
+    </div>
+    <div class="card">
+      <h2>AI Assistant</h2>
+      <p class="hint">Ask anything about your numbers in plain language. Uses your own AI key, stored <b>only on this device</b> — it is never uploaded to the cloud or to GitHub. <span id="aiKeyState"></span></p>
+      <div class="form-row" id="aiKeyRow">
+        <div class="field"><label>Provider</label>
+          <select id="aiProvider" style="width:180px">
+            <option value="openai">OpenAI (GPT-4o mini)</option>
+            <option value="gemini">Google Gemini (Flash)</option>
+          </select>
+        </div>
+        <div class="field"><label>API key</label><input type="password" id="aiKey" placeholder="paste your key" style="width:260px"></div>
+        <button class="btn secondary" id="saveKeyBtn">Save key</button>
+        <button class="btn danger" id="clearKeyBtn">Remove key</button>
+      </div>
+      <p class="hint" style="margin-top:6px">Get a key: OpenAI → platform.openai.com/api-keys · Gemini → aistudio.google.com/apikey</p>
+      <div id="aiChat" style="margin-top:16px;border:1px solid var(--line);border-radius:10px;padding:14px;min-height:120px;max-height:340px;overflow-y:auto;background:var(--panel2)"></div>
+      <div class="form-row" style="margin-top:12px;align-items:stretch">
+        <div class="field" style="flex:1;min-width:240px"><label>Your question</label><input type="text" id="aiInput" placeholder="e.g. Why was food cost high last month? How can I improve prime cost?" style="width:100%"></div>
+        <button class="btn" id="aiSendBtn" style="align-self:end">Ask</button>
+      </div>
+      <div class="row-actions"><button class="btn secondary" id="aiClearBtn">Clear chat</button></div>
+    </div>
+  </section>
+
   <!-- SETTINGS -->
   <section id="settings" style="display:none">
     <div class="card">
@@ -271,6 +316,24 @@
 </main>
 <footer></footer>
 <div id="photoModal"><img id="photoModalImg" alt="invoice"></div>
+
+<div id="authGate">
+  <div class="auth-box">
+    <div class="egg" style="font-size:42px">🍳</div>
+    <h2>District Bagel Park</h2>
+    <p class="hint">Sign in with Google to keep your data private and synced across all your devices.</p>
+    <button class="btn" id="googleSignIn">
+      <img class="gicon" alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZmlsbD0iI0ZGQzEwNyIgZD0iTTQzLjYxMSwyMC4wODNINDJWMjBIMjR2OGgxMS4zMDNjLTEuNjQ5LDQuNjU3LTYuMDgsOC05LjMwMyw4Yy01LjUyMiwwLTEwLTQuNDc4LTEwLTEwYzAtNS41MjIsNC40NzgtMTAsMTAtMTBjMi41MSwwLDQuODA1LDAuOTk0LDYuNTQ3LDIuNjA0bDUuNjU3LTUuNjU3QzM0LjA0Niw2LjA1MywyOS4yNjgsNCwyNCw0QzEyLjk1NSw0LDQsMTIuOTU1LDQsMjRjMCwxMS4wNDUsOC45NTUsMjAsMjAsMjBjMTEuMDQ1LDAsMjAtOC45NTUsMjAtMjBDNDQsMjIuNjU5LDQzLjg2MiwyMS4zNSw0My42MTEsMjAuMDgzeiIvPjxwYXRoIGZpbGw9IiNGRjNEMDAiIGQ9Ik02LjMwNiwxNC42OTFsNi41NzEsNC44MTlDMTQuNjU1LDE1LjEwOCwxOC45NjEsMTIsMjQsMTJjMi41MSwwLDQuODA1LDAuOTk0LDYuNTQ3LDIuNjA0bDUuNjU3LTUuNjU3QzM0LjA0Niw2LjA1MywyOS4yNjgsNCwyNCw0QzE2LjMxOCw0LDkuNjU2LDguMzM3LDYuMzA2LDE0LjY5MXoiLz48cGF0aCBmaWxsPSIjNENBRjUwIiBkPSJNMjQsNDRjNS4xNjYsMCw5Ljg2LTEuOTc3LDEzLjQwOS01LjE5MmwtNi4xOS01LjIzOEMyOS4yMTEsMzUuMDkxLDI2Ljc1NSwzNiwyNCwzNmMtNS4yMDIsMC05LjYxOS0zLjMxNy0xMS4yODMtNy45NDZsLTYuNTIyLDUuMDI1QzkuNTA1LDM5LjU1NiwxNi4yMjcsNDQsMjQsNDR6Ii8+PHBhdGggZmlsbD0iIzE5NzZEMiIgZD0iTTQzLjYxMSwyMC4wODNINDJWMjBIMjR2OGgxMS4zMDNjLTAuNzkyLDIuMjM3LTIuMjMxLDQuMTY2LTQuMDg3LDUuNTcxYzAuMDAxLTAuMDAxLDAuMDAyLTAuMDAxLDAuMDAzLTAuMDAybDYuMTksNS4yMzhDMzYuOTcxLDM5LjIwNSw0NCwzNCw0NCwyNEM0NCwyMi42NTksNDMuODYyLDIxLjM1LDQzLjYxMSwyMC4wODN6Ii8+PC9zdmc+">
+      Sign in with Google
+    </button>
+    <button class="btn secondary" id="offlineBtn">Use on this device only</button>
+    <p class="hint" id="authMsg" style="margin-top:14px"></p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
 const KEY_DATA="dbp_entries", KEY_SET="dbp_settings", KEY_INV="dbp_invoices", KEY_FIXED="dbp_fixed", KEY_SUP="dbp_suppliers";
@@ -352,10 +415,10 @@ function groupEntries(){
   return g;
 }
 
-function saveEntries(){ localStorage.setItem(KEY_DATA,JSON.stringify(entries)); }
-function saveInvoices(){ localStorage.setItem(KEY_INV,JSON.stringify(invoices)); }
-function saveFixed(){ localStorage.setItem(KEY_FIXED,JSON.stringify(fixedCosts)); }
-function saveSuppliers(){ localStorage.setItem(KEY_SUP,JSON.stringify(suppliers)); }
+function saveEntries(){ localStorage.setItem(KEY_DATA,JSON.stringify(entries)); cloudSave(); }
+function saveInvoices(){ localStorage.setItem(KEY_INV,JSON.stringify(invoices)); cloudSave(); }
+function saveFixed(){ localStorage.setItem(KEY_FIXED,JSON.stringify(fixedCosts)); cloudSave(); }
+function saveSuppliers(){ localStorage.setItem(KEY_SUP,JSON.stringify(suppliers)); cloudSave(); }
 function addSupplier(name){
   name=(name||"").trim(); if(!name) return false;
   if(suppliers.some(s=>s.toLowerCase()===name.toLowerCase())) return false;
@@ -370,7 +433,7 @@ function renderSuppliers(){
     :'<span class="hint">No suppliers yet.</span>';
   wrap.querySelectorAll("button[data-sup]").forEach(b=>b.onclick=()=>{ suppliers=suppliers.filter(x=>x!==b.dataset.sup); saveSuppliers(); renderSuppliers(); });
 }
-function saveSettingsObj(){ localStorage.setItem(KEY_SET,JSON.stringify(settings)); }
+function saveSettingsObj(){ localStorage.setItem(KEY_SET,JSON.stringify(settings)); cloudSave(); }
 
 function money(n){ const s=Math.round(n).toLocaleString(); return /^[A-Za-z]/.test(settings.cur)?settings.cur+" "+s:settings.cur+s; }
 function pct(n){ return (n*100).toFixed(1)+"%"; }
@@ -492,11 +555,11 @@ function renderChart(){
 
 function kpi(label,val,sub){ return '<div class="kpi"><div class="label">'+label+'</div><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>'; }
 function renderSettings(){ setFood.value=settings.food; setLabor.value=settings.labor; setRed.value=settings.red; setCur.value=settings.cur; }
-function renderAll(){ renderDashboard(); renderEntries(); renderInvoices(); renderFixed(); renderSuppliers(); }
+function renderAll(){ renderDashboard(); renderEntries(); renderInvoices(); renderFixed(); renderSuppliers(); renderInsights(); }
 
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
-  ["dashboard","entries","invoices","fixed","settings"].forEach(t=>document.getElementById(t).style.display=(t===b.dataset.tab?"block":"none"));
+  ["dashboard","entries","invoices","fixed","ai","settings"].forEach(t=>document.getElementById(t).style.display=(t===b.dataset.tab?"block":"none"));
 });
 
 document.getElementById("addBtn").onclick=()=>{
@@ -636,9 +699,256 @@ document.getElementById("restoreFile").onchange=ev=>{
 function download(name,type,content){ const b=new Blob([content],{type}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 function uid(){ return Date.now()+""+Math.floor(Math.random()*1000); }
 
+// ===================== AI Advisor: Smart Analysis (offline) =====================
+function fmtPct(n){ return (n*100).toFixed(1)+"%"; }
+function buildAnalysis(){
+  const out=[]; // {sev:'good'|'warn'|'bad'|'info', title, text}
+  const tS=sumType("sales"), tF=sumType("food"), tL=sumType("labor");
+  const inv=allInvoices();
+  if(!tS && !inv.length){ out.push({sev:"info",title:"No data yet",text:"Add sales, costs or invoices and the analysis will appear here."}); return out; }
+  if(tS){
+    const fp=tF/tS, lp=tL/tS, pp=(tF+tL)/tS, st=statusOf(pp);
+    out.push({sev: st==="GREEN"?"good":st==="YELLOW"?"warn":"bad",
+      title:"Prime cost "+fmtPct(pp)+" — "+st,
+      text:"Food "+fmtPct(fp)+" (target "+settings.food+"%), Labor "+fmtPct(lp)+" (target "+settings.labor+"%). Red line "+settings.red+"%."});
+    if(fp*100>settings.food) out.push({sev:"warn",title:"Food cost above target",text:"Food cost is "+fmtPct(fp)+" — "+(fp*100-settings.food).toFixed(1)+" points over your "+settings.food+"% target. Check portions, waste and supplier prices."});
+    if(lp*100>settings.labor) out.push({sev:"warn",title:"Labor cost above target",text:"Labor is "+fmtPct(lp)+" — "+(lp*100-settings.labor).toFixed(1)+" points over your "+settings.labor+"% target. Match staffing to sales volume."});
+  }
+  const g=groupEntries(), keys=Object.keys(g).sort();
+  if(keys.length>=2){
+    const last=g[keys[keys.length-1]], prev=g[keys[keys.length-2]];
+    if(last.s&&prev.s){
+      const lp=(last.f+last.l)/last.s, pp=(prev.f+prev.l)/prev.s, diff=(lp-pp)*100;
+      if(Math.abs(diff)>=1) out.push({sev: diff>0?"bad":"good",
+        title:"Prime cost "+(diff>0?"rose":"improved")+" "+Math.abs(diff).toFixed(1)+" points",
+        text:keys[keys.length-2]+" "+fmtPct(pp)+" → "+keys[keys.length-1]+" "+fmtPct(lp)+"."});
+    }
+  }
+  const breached=keys.filter(k=>{const m=g[k]; return m.s && (m.f+m.l)/m.s*100>settings.red;});
+  if(breached.length) out.push({sev:"bad",title:breached.length+" period(s) above the red line",text:"Watch: "+breached.join(", ")+"."});
+  if(tS){
+    const invFood=invoices.filter(v=>isFoodCat(v.category)).reduce((a,v)=>a+(+v.amount||0),0);
+    const d=invFood-tF;
+    if(Math.abs(d)>=Math.max(50, tF*0.1)) out.push({sev:"warn",title:"Food invoices vs entered gap",text:"Food invoices total "+money(invFood)+" but you logged "+money(tF)+" as food cost ("+(d>0?"+":"")+money(d)+"). One may be incomplete."});
+  }
+  const bySup={}; invoices.forEach(v=>{ const c=v.company||"?"; bySup[c]=(bySup[c]||0)+(+v.amount||0); });
+  const supK=Object.keys(bySup).sort((a,b)=>bySup[b]-bySup[a]);
+  if(supK.length) out.push({sev:"info",title:"Top supplier: "+supK[0],text:supK[0]+" = "+money(bySup[supK[0]])+(supK[1]?", then "+supK[1]+" ("+money(bySup[supK[1]])+")":"")+"."});
+  const byCat={}; inv.forEach(v=>{ const c=v.category||"Other"; byCat[c]=(byCat[c]||0)+(+v.amount||0); });
+  const catK=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+  if(catK.length) out.push({sev:"info",title:"Biggest expense category: "+catK[0],text:money(byCat[catK[0]])+" total across all invoices."});
+  const fxMonthly=fixedCosts.reduce((a,f)=>a+(+f.amount||0),0);
+  if(fxMonthly) out.push({sev:"info",title:"Fixed costs: "+money(fxMonthly)+" / month",text:fixedCosts.map(f=>f.name+" "+money(f.amount)).join(", ")+"."});
+  if(out.length<=1 && tS) out.push({sev:"good",title:"Looking healthy",text:"No major issues detected with the current data."});
+  return out;
+}
+function renderInsights(){
+  const box=document.getElementById("aiInsights"); if(!box) return;
+  const ins=buildAnalysis();
+  const color={good:"var(--green)",warn:"var(--yellow)",bad:"var(--red)",info:"var(--muted)"};
+  const bg={good:"var(--green-bg)",warn:"var(--yellow-bg)",bad:"var(--redbad-bg)",info:"var(--panel2)"};
+  box.innerHTML=ins.map(i=>'<div style="border:1px solid '+color[i.sev]+';background:'+bg[i.sev]+';border-radius:10px;padding:12px 14px;margin-bottom:10px">'+
+    '<div style="font-weight:800;color:'+color[i.sev]+'">'+esc(i.title)+'</div>'+
+    '<div class="hint" style="margin-top:4px">'+esc(i.text)+'</div></div>').join("");
+}
+
+// ===================== AI Assistant (chat, user's own key) =====================
+const KEY_AI="dbp_ai_key", KEY_AIPROV="dbp_ai_provider";
+let aiMessages=[];
+function getAIKey(){ return localStorage.getItem(KEY_AI)||""; }
+function getAIProvider(){ return localStorage.getItem(KEY_AIPROV)||"openai"; }
+function refreshKeyState(){
+  const s=document.getElementById("aiKeyState");
+  if(s) s.innerHTML=getAIKey()?'<b style="color:var(--green)">Key saved on this device.</b>':'<b style="color:var(--red)">No key saved yet.</b>';
+  const sel=document.getElementById("aiProvider"); if(sel) sel.value=getAIProvider();
+}
+function summarizeForAI(){
+  const tS=sumType("sales"),tF=sumType("food"),tL=sumType("labor");
+  const g=groupEntries(), keys=Object.keys(g).sort();
+  const L=[];
+  L.push("Restaurant: District Bagel Park (Quebec).");
+  L.push("Targets: food "+settings.food+"%, labor "+settings.labor+"%, prime red line "+settings.red+"%. Currency "+settings.cur+".");
+  L.push("Totals: sales "+Math.round(tS)+", food "+Math.round(tF)+", labor "+Math.round(tL)+(tS?(" => food "+fmtPct(tF/tS)+", labor "+fmtPct(tL/tS)+", prime "+fmtPct((tF+tL)/tS)):"")+".");
+  if(keys.length){ L.push("By "+period+":"); keys.forEach(k=>{const m=g[k]; L.push("  "+k+": sales "+Math.round(m.s)+", food "+Math.round(m.f)+", labor "+Math.round(m.l)+(m.s?(" (prime "+fmtPct((m.f+m.l)/m.s)+")"):""));}); }
+  const inv=allInvoices(), byCat={}; inv.forEach(v=>{const c=v.category||"Other"; byCat[c]=(byCat[c]||0)+(+v.amount||0);});
+  if(Object.keys(byCat).length) L.push("Invoice spend by category: "+Object.keys(byCat).map(c=>c+" "+Math.round(byCat[c])).join(", ")+".");
+  const fx=fixedCosts.reduce((a,f)=>a+(+f.amount||0),0);
+  if(fx) L.push("Fixed monthly costs: "+fixedCosts.map(f=>f.name+" "+f.amount).join(", ")+" (total "+Math.round(fx)+"/month).");
+  return L.join("\n");
+}
+function rebuildChat(){
+  const box=document.getElementById("aiChat"); if(!box) return;
+  const msgs=aiMessages.slice(); aiMessages=[]; box.innerHTML="";
+  msgs.forEach(m=>addChatMsg(m.role,m.text));
+}
+function addChatMsg(role,text){
+  aiMessages.push({role,text});
+  const box=document.getElementById("aiChat"); if(!box) return;
+  const me=role==="user";
+  box.innerHTML+='<div style="margin-bottom:10px;text-align:'+(me?"right":"left")+'">'+
+    '<span style="display:inline-block;max-width:88%;padding:8px 12px;border-radius:10px;background:'+(me?"var(--red)":"#fff")+';color:'+(me?"#fff":"var(--text)")+';border:1px solid var(--line);text-align:left;white-space:pre-wrap">'+esc(text)+'</span></div>';
+  box.scrollTop=box.scrollHeight;
+}
+async function askAI(){
+  const inp=document.getElementById("aiInput"); const q=(inp.value||"").trim(); if(!q) return;
+  const key=getAIKey(); if(!key){ alert("Please save your AI API key first."); return; }
+  inp.value=""; addChatMsg("user",q);
+  const provider=getAIProvider();
+  const sys="You are a practical financial advisor for a restaurant owner. Answer concisely with concrete, actionable advice. Use the data below. Amounts are in "+settings.cur+".\n\nDATA:\n"+summarizeForAI();
+  addChatMsg("assistant","…");
+  try{
+    let answer;
+    if(provider==="gemini"){
+      const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key="+encodeURIComponent(key),{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{role:"user",parts:[{text:sys+"\n\nQUESTION: "+q}]}]})
+      });
+      const j=await r.json();
+      if(!r.ok) throw new Error(j.error&&j.error.message?j.error.message:("HTTP "+r.status));
+      answer=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts[0].text)||"(no answer)";
+    } else {
+      const msgs=[{role:"system",content:sys}];
+      aiMessages.filter(m=>m.text!=="…").forEach(m=>msgs.push({role:m.role==="user"?"user":"assistant",content:m.text}));
+      const r=await fetch("https://api.openai.com/v1/chat/completions",{
+        method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+        body:JSON.stringify({model:"gpt-4o-mini",messages:msgs,temperature:0.3})
+      });
+      const j=await r.json();
+      if(!r.ok) throw new Error(j.error&&j.error.message?j.error.message:("HTTP "+r.status));
+      answer=(j.choices&&j.choices[0]&&j.choices[0].message.content)||"(no answer)";
+    }
+    aiMessages.pop(); rebuildChat(); addChatMsg("assistant",answer);
+  }catch(e){
+    aiMessages.pop(); rebuildChat(); addChatMsg("assistant","Error: "+(e.message||e)+"\n(Check your API key, plan/billing, and internet.)");
+  }
+}
+document.getElementById("analyzeBtn").onclick=renderInsights;
+document.getElementById("saveKeyBtn").onclick=()=>{
+  const k=(document.getElementById("aiKey").value||"").trim(), p=document.getElementById("aiProvider").value;
+  if(!k){ alert("Paste a key first."); return; }
+  localStorage.setItem(KEY_AI,k); localStorage.setItem(KEY_AIPROV,p);
+  document.getElementById("aiKey").value=""; refreshKeyState(); alert("Key saved on this device only — it is not uploaded anywhere.");
+};
+document.getElementById("clearKeyBtn").onclick=()=>{ localStorage.removeItem(KEY_AI); refreshKeyState(); };
+document.getElementById("aiProvider").onchange=()=>localStorage.setItem(KEY_AIPROV,document.getElementById("aiProvider").value);
+document.getElementById("aiSendBtn").onclick=askAI;
+document.getElementById("aiInput").addEventListener("keydown",e=>{ if(e.key==="Enter") askAI(); });
+document.getElementById("aiClearBtn").onclick=()=>{ aiMessages=[]; document.getElementById("aiChat").innerHTML=""; };
+refreshKeyState();
+
 const today=new Date().toISOString().slice(0,10);
 inDate.value=today; invDate.value=today;
 renderSettings(); renderAll();
+
+// ===================== Firebase Auth + Cloud Sync =====================
+const firebaseConfig={
+  apiKey:"AIzaSyCDvF2rfaNTKPjARVM1NxplymcGV1FJ5S8",
+  authDomain:"district-bagel-parc.firebaseapp.com",
+  projectId:"district-bagel-parc",
+  storageBucket:"district-bagel-parc.firebasestorage.app",
+  messagingSenderId:"209996494854",
+  appId:"1:209996494854:web:2e2b0463cfb6db75892b87"
+};
+let fbUser=null, db=null, cloudTimer=null, cloudUnsub=null, applyingCloud=false, pushing=false;
+const gate=document.getElementById("authGate");
+const authMsg=document.getElementById("authMsg");
+
+function hideGate(){ gate.style.display="none"; }
+function showGate(){ gate.style.display="flex"; authMsg.textContent=""; }
+function syncStatus(t){ const el=document.getElementById("syncDot"); if(el) el.textContent=t; }
+
+// Bundle local data for the cloud (photos stripped to stay under Firestore's 1MB limit)
+function cloudBundle(){
+  return {
+    settings, entries, fixedCosts, suppliers,
+    invoices: invoices.map(v=>{ const o=Object.assign({},v); delete o.photo; return o; }),
+    updatedAt: Date.now()
+  };
+}
+function cloudSave(){
+  if(applyingCloud || !db || !fbUser) return;
+  clearTimeout(cloudTimer);
+  syncStatus("Saving…");
+  cloudTimer=setTimeout(()=>{
+    pushing=true;
+    db.collection("users").doc(fbUser.uid).set(cloudBundle())
+      .then(()=>{ pushing=false; syncStatus("Synced ✓"); })
+      .catch(e=>{ pushing=false; syncStatus("Offline — will sync later"); console.warn("cloudSave",e); });
+  },700);
+}
+function applyCloud(d){
+  if(!d) return;
+  applyingCloud=true;
+  if(Array.isArray(d.entries)) entries=d.entries;
+  if(Array.isArray(d.fixedCosts)) fixedCosts=d.fixedCosts;
+  if(Array.isArray(d.suppliers)) suppliers=d.suppliers;
+  if(d.settings) settings=Object.assign({},defaults,d.settings);
+  if(Array.isArray(d.invoices)){
+    const pmap={}; invoices.forEach(v=>{ if(v.photo) pmap[v.id]=v.photo; });
+    invoices=d.invoices.map(v=> pmap[v.id]?Object.assign({},v,{photo:pmap[v.id]}):v );
+  }
+  saveEntries();saveInvoices();saveFixed();saveSuppliers();saveSettingsObj();
+  migrateEntries(); seedSuppliers();
+  applyingCloud=false;
+  renderSettings(); renderAll();
+}
+function startSync(){
+  if(!db || !fbUser) return;
+  const ref=db.collection("users").doc(fbUser.uid);
+  ref.get().then(snap=>{
+    if(snap.exists && snap.data() && (snap.data().updatedAt || (snap.data().entries||[]).length)){
+      applyCloud(snap.data()); syncStatus("Synced ✓");
+    } else {
+      pushing=true;
+      ref.set(cloudBundle()).then(()=>{ pushing=false; syncStatus("Synced ✓"); }).catch(()=>{ pushing=false; });
+    }
+    if(cloudUnsub) cloudUnsub();
+    cloudUnsub=ref.onSnapshot(s=>{
+      if(!s.exists || s.metadata.hasPendingWrites || pushing) return;
+      applyCloud(s.data());
+    }, e=>console.warn("snapshot",e));
+  }).catch(e=>{ console.warn("startSync",e); syncStatus("Offline"); });
+}
+function updateAuthUI(){
+  const a=document.getElementById("acct"); if(!a) return;
+  if(fbUser){
+    a.innerHTML='<span class="sync-dot" id="syncDot">Synced ✓</span>'+
+      '<span class="acct-email">'+esc(fbUser.email||"signed in")+'</span>'+
+      '<button class="btn danger" id="signOutBtn">Sign out</button>';
+    document.getElementById("signOutBtn").onclick=()=>{ firebase.auth().signOut(); };
+  } else {
+    a.innerHTML='<button class="btn secondary" id="signInBtn">Sign in / Sync</button>';
+    document.getElementById("signInBtn").onclick=showGate;
+  }
+}
+function doGoogleSignIn(){
+  authMsg.textContent="Opening Google sign-in…";
+  const provider=new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err=>{
+    if(err && (err.code==="auth/popup-blocked"||err.code==="auth/cancelled-popup-request"||err.code==="auth/popup-closed-by-user")){
+      firebase.auth().signInWithRedirect(provider);
+    } else {
+      authMsg.textContent="Sign-in failed: "+(err&&err.message?err.message:err);
+    }
+  });
+}
+function initFirebase(){
+  if(!window.firebase){ authMsg.textContent="Could not load online services — you can still use this device."; return; }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    try{ db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
+    firebase.auth().onAuthStateChanged(user=>{
+      fbUser=user; updateAuthUI();
+      if(user){ hideGate(); startSync(); }
+      else { if(cloudUnsub){cloudUnsub();cloudUnsub=null;} }
+    });
+  }catch(e){ authMsg.textContent="Online services error — you can still use this device."; console.warn(e); }
+}
+document.getElementById("googleSignIn").onclick=doGoogleSignIn;
+document.getElementById("offlineBtn").onclick=hideGate;
+updateAuthUI();
+initFirebase();
 </script>
 </body>
 </html>
